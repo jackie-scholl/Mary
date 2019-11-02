@@ -1,0 +1,10 @@
+Lambda.		  Expression ::= "~" Ident "." Expression ;
+Application.  Expression1 ::= Expression1 Expression2 ;
+ID.    		  Expression2 ::= Ident ;
+
+coercions Expression 2 ;
+
+--EInt. Exp2 ::= Integer;
+--EAdd. Exp1 ::= Exp1 "+" Exp2;
+
+--Foo. F ::= "foo" Exp2 ;

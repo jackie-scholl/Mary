@@ -1,6 +1,8 @@
 module Main where
 
-import Lib
+import Beta
 
-main :: IO ()
-main = someFunc
+main :: IO()
+main = runBeta
+
+
