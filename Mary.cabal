@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d44a80e2e773bd9ccf75ff7d31179dc13bd4b4faab7ead29d3a9768b57b753ce
+-- hash: 0f7ff50b300b7c75ad511a8d0097167b5c4ea267d13edb4516a51f8b101f7b3d
 
 name:           Mary
 version:        0.1.0.0
@@ -39,12 +39,13 @@ library
   build-depends:
       array
     , base >=4.7 && <5
+    , containers
+    , mtl
   default-language: Haskell2010
 
 executable Mary-exe
   main-is: Main.hs
   other-modules:
-      Beta
       Paths_Mary
   hs-source-dirs:
       app
@@ -53,6 +54,8 @@ executable Mary-exe
       Mary
     , array
     , base >=4.7 && <5
+    , containers
+    , mtl
   default-language: Haskell2010
 
 test-suite Mary-test
@@ -66,4 +69,6 @@ test-suite Mary-test
   build-depends:
       Mary
     , base >=4.7 && <5
+    , containers
+    , mtl
   default-language: Haskell2010

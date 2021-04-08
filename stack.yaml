@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-14.12
+resolver: lts-17.8
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -28,8 +28,9 @@ resolver: lts-14.12
 #   subdirs:
 #   - auto-update
 #   - wai
-packages:
-- .
+
+extra-deps:
+    - container-1.1.6@sha256:95436896b18c970f8058f555a287909280e1e59c799dcc06ed4eedd51c95e88b,175
 
 nix:
     enable: true

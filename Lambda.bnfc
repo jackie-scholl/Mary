@@ -1,10 +1,16 @@
-Lambda.		  Expression ::= "~" Ident "." Expression ;
-Application.  Expression1 ::= Expression1 Expression2 ;
-ID.    		  Expression2 ::= Ident ;
+ELambda. Expression1 ::= "~" Ident "." Expression;
+EIf.     Expression1 ::= "if"  Expression Expression Expression;
+EAnd.    Expression1 ::= "and" Expression Expression;
+EOr.     Expression1 ::= "or"  Expression Expression;
+ELet.    Expression2 ::= "let" Ident Expression Expression;
+ENot.    Expression2 ::= "not" Expression;
 
-coercions Expression 2 ;
+ECall.   Expression2 ::= Expression Expression;
 
---EInt. Exp2 ::= Integer;
---EAdd. Exp1 ::= Exp1 "+" Exp2;
+ETrue.   Expression3 ::= "true";
+EFalse.  Expression3 ::= "false";
+ENum.    Expression3 ::= Integer;
 
---Foo. F ::= "foo" Exp2 ;
+EVar.   Expression3 ::= Ident;
+
+coercions Expression 3;
