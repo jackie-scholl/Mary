@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.2.
+-- This file has been generated from package.yaml by hpack version 0.34.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3e5d96b38a68ccd01ac60c9f329f3e5fce29dabaf385c34dcf77cba7733bce2f
+-- hash: d44a80e2e773bd9ccf75ff7d31179dc13bd4b4faab7ead29d3a9768b57b753ce
 
 name:           Mary
 version:        0.1.0.0
@@ -32,7 +32,6 @@ library
       ParLambda
       PrintLambda
       SkelLambda
-      TestLambda
   other-modules:
       Paths_Mary
   hs-source-dirs:
