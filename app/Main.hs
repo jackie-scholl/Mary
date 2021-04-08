@@ -4,11 +4,9 @@ import AbsLambda
 import ParLambda
 
 import Data.Map.Strict
---import Control.Monad.State.Lazy
 import Control.Monad.Reader
 
 type Scope = Map Ident DData
-
 data DData = DBool Bool | DInt Integer | DFunction Ident Expression Scope | DError deriving (Eq, Show)
 
 simpleNot :: DData -> DData
@@ -37,9 +35,8 @@ resolve s = case s of
         scope <- ask
         return $ scope ! ident
     ENot expr1 -> do
-        initial <- resolve expr1
-        let result = simpleNot initial
-        return result
+        result1 <- resolve expr1
+        return $ simpleNot result1
     EAnd expr1 expr2 -> do
         result1 <- resolve expr1
         result2 <- resolve expr2
@@ -64,14 +61,8 @@ resolve s = case s of
         f' <- resolve function
         a' <- resolve argument
         return $ resolveCall f' a'
-        
-    --resolve scope2 expr
-  --      where val2 = resolve scope value
-    --          scope2 = Map.insert ident val2 scope
 
 main :: IO ()
 main = do
     s <- getLine
     print $ fmap (\x -> runReader (resolve x) empty) $ pExpression $ myLexer s
-
-
