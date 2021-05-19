@@ -31,6 +31,8 @@ resolver: lts-17.8
 
 extra-deps:
     - container-1.1.6@sha256:95436896b18c970f8058f555a287909280e1e59c799dcc06ed4eedd51c95e88b,175
+    - chell-0.5@sha256:6076ba6cdf2d4ce59a8b5fa828a2e13feecd7a9c9f8e3f6d65a4c70178e623e1,2192
+    - patience-0.3@sha256:fe3a2c5b1ac4d3425bad3d1ee0b6bb529b6e74ab41151f8526f26fc8dfa1206b,1252
 
 nix:
     enable: true
