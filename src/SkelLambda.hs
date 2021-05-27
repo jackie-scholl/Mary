@@ -23,6 +23,7 @@ transExpression x = case x of
   AbsLambda.EIf expression1 expression2 expression3 -> failure x
   AbsLambda.EAnd expression1 expression2 -> failure x
   AbsLambda.EOr expression1 expression2 -> failure x
+  AbsLambda.EPlus expression1 expression2 -> failure x
   AbsLambda.ELet ident expression1 expression2 -> failure x
   AbsLambda.ENot expression -> failure x
   AbsLambda.ECall expression1 expression2 -> failure x

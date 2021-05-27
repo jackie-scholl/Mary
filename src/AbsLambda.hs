@@ -16,6 +16,7 @@ data Expression
     | EIf Expression Expression Expression
     | EAnd Expression Expression
     | EOr Expression Expression
+    | EPlus Expression Expression
     | ELet Ident Expression Expression
     | ENot Expression
     | ECall Expression Expression

@@ -30,7 +30,8 @@ The reserved words used in Lambda are the following:
   | ``not`` | ``or`` | ``true`` |
 
 The symbols used in Lambda are the following:
-  | ~ | . | ( | )
+  | ~ | . | + | (
+  | ) |  |  |
 
 ===Comments===
 There are no single-line comments in the grammar.There are no multiple-line comments in the grammar.
@@ -45,6 +46,7 @@ All other symbols are terminals.
   |  |  **|**  | ``if`` //Expression// //Expression// //Expression//
   |  |  **|**  | ``and`` //Expression// //Expression//
   |  |  **|**  | ``or`` //Expression// //Expression//
+  |  |  **|**  | ``+`` //Expression// //Expression//
   |  |  **|**  | //Expression2//
   | //Expression2// | -> | ``let`` //Ident// //Expression// //Expression//
   |  |  **|**  | ``not`` //Expression//

@@ -116,6 +116,7 @@ instance Print AbsLambda.Expression where
     AbsLambda.EIf expression1 expression2 expression3 -> prPrec i 1 (concatD [doc (showString "if"), prt 0 expression1, prt 0 expression2, prt 0 expression3])
     AbsLambda.EAnd expression1 expression2 -> prPrec i 1 (concatD [doc (showString "and"), prt 0 expression1, prt 0 expression2])
     AbsLambda.EOr expression1 expression2 -> prPrec i 1 (concatD [doc (showString "or"), prt 0 expression1, prt 0 expression2])
+    AbsLambda.EPlus expression1 expression2 -> prPrec i 1 (concatD [doc (showString "+"), prt 0 expression1, prt 0 expression2])
     AbsLambda.ELet id_ expression1 expression2 -> prPrec i 2 (concatD [doc (showString "let"), prt 0 id_, prt 0 expression1, prt 0 expression2])
     AbsLambda.ENot expression -> prPrec i 2 (concatD [doc (showString "not"), prt 0 expression])
     AbsLambda.ECall expression1 expression2 -> prPrec i 2 (concatD [prt 0 expression1, prt 0 expression2])

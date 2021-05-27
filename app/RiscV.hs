@@ -3,12 +3,14 @@ module RiscV where
 import AbsLambda
 import ParLambda
 
-import Data.Map.Strict
+import qualified Data.Map.Strict as Map
 import Control.Monad.Reader
 
-type Scope = Map Ident DData
-data DData = DBool Bool | DInt Integer | DFunction Ident Expression Scope | DError deriving (Eq, Show)
+data Identifier = Identifier String
+type Scope = Map.Map Identifier DData
+data DData = DBool Bool | DInt Integer | DFunction Ident Expression Scope | DError
 
+{-
 simpleNot :: DData -> DData
 simpleNot (DBool b) = DBool $ not b
 simpleNot _ = DError
@@ -25,7 +27,83 @@ ifThenElse _ _ _ = DError
 resolveCall :: DData -> DData -> DData
 resolveCall (DFunction argName functionBody scope) argument = runReader (resolve functionBody) (insert argName argument scope)
 resolveCall _ _ = DError
+-}
 
+
+
+type StackPointer = Integer
+type Code = [Instruction]
+data Instruction = Constant Integer | Plus
+
+{-
+outputConstant :: Integer -> State StackPointer Code
+outputConstant :: 
+outputConstant value = do
+		sp <- ask
+		let newSp = sp + 8
+		let result = helper sp
+		local newSp result
+	where
+		helper :: Integer -> Code
+		helper sp = [load, store sp]
+
+		load = Instruction $ "li t3, " ++ (show value)
+		store sp = Instruction $ "sd t3, " ++ (show sp) ++ "(sp)" 
+
+outputPlus :: Expression -> Expression -> Reader StackPointer Code
+outputPlus = undefined
+-}
+
+writeCode :: Code -> String
+writeCode code = result
+	where
+		mainInstructions = helper 0 code
+		allInstructions = ["addi sp, sp, -48"] ++ mainInstructions
+				++ ["la a0, msg", "ld a1, 0(sp)", "jal ra, printf", "li a0, 0", "jal exit"]
+		header = ".section .text\n.globl main\nmain:\n"
+		footer = ".section .rodata\nmsg:\n\t\t.string \"Result: %d\\n\"\n "
+
+		result = header ++ (unlines $ map basic_format allInstructions) ++ footer
+
+		basic_format :: String -> String
+		basic_format instruction = "\t\t" ++ instruction
+	
+		helper :: Integer -> Code -> [String]
+		helper _ [] = []
+		helper stackPointer ((Constant value) : rest) = (outputConstant stackPointer value) ++ helper (stackPointer + 8) rest
+		helper stackPointer (Plus : rest) 			  = (outputPlus     stackPointer)       ++ helper (stackPointer - 8) rest
+
+		outputConstant :: Integer -> Integer -> [String]
+ 		outputConstant stackPointer value = [load, store]
+ 			where
+ 				load = "li t3, " ++ (show value)
+ 				store = "sd t3, " ++ (show stackPointer) ++ "(sp)"
+
+ 		outputPlus :: Integer -> [String]
+ 		outputPlus stackPointer = [
+ 		 				"ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)",
+ 		 				"ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)",
+ 		 				"ADD t3, t4, t5",
+ 		 				"sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"]
+
+
+--resolve :: Expression -> Reader StackPointer Code
+resolve :: Expression -> Reader Scope Code
+resolve s = case s of
+	ENum literal -> return [Constant literal]
+	ETrue -> return [Constant 1]
+	EFalse -> return [Constant 0]
+	EPlus expr1 expr2 -> do
+		result1 <- resolve expr1
+		result2 <- resolve expr2
+		return (result1 ++ result2 ++ [Plus])
+	--(resolve expr1) ++ (resolve expr2) ++ [Plus]
+	otherwise -> error "whoops, idk how to handle anything else"
+
+resolve2 :: Expression -> Code
+resolve2 x = runReader (resolve x) Map.empty
+
+{-
 resolve :: Expression -> Reader Scope DData
 resolve s = case s of
     ETrue  -> return $ DBool True
@@ -61,8 +139,25 @@ resolve s = case s of
         f' <- resolve function
         a' <- resolve argument
         return $ resolveCall f' a'
+-}
+
+parse :: String -> Either String Expression
+parse s = pExpression $ myLexer s
+
+compile :: String -> Either String String
+compile = fmap writeCode . fmap resolve2 . parse
+
+writeOrErr :: Either String String -> IO ()
+writeOrErr (Left s) = error s
+writeOrErr (Right s) = writeFile "output.s" s
+
+input = "true"
 
 doThing :: IO ()
 doThing = do
-    s <- getLine
-    print $ fmap (\x -> runReader (resolve x) empty) $ pExpression $ myLexer s
+    --s <- getLine
+    let s = input
+    let result = compile s
+    writeOrErr result
+    --print $ fmap (\x -> runReader (resolve x) 0) $ pExpression $ myLexer s
+    --print $ fmap writeCode $ fmap resolve $ pExpression $ myLexer s

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a75f470b12337156bbeb97e048b0e3764acfe08cd5646b02f68699d5ad3b31fa
+-- hash: ba1baa2c570f178d21ea7072876aa1a75527a29e962417567c1e2ad8d8c6d940
 
 name:           Mary
 version:        0.1.0.0
@@ -32,6 +32,7 @@ library
       LexLambda
       ParLambda
       PrintLambda
+      Riscy
       SkelLambda
   other-modules:
       Paths_Mary

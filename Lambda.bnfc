@@ -2,6 +2,7 @@ ELambda. Expression1 ::= "~" Ident "." Expression;
 EIf.     Expression1 ::= "if"  Expression Expression Expression;
 EAnd.    Expression1 ::= "and" Expression Expression;
 EOr.     Expression1 ::= "or"  Expression Expression;
+EPlus.   Expression1 ::= "+"   Expression Expression;
 ELet.    Expression2 ::= "let" Ident Expression Expression;
 ENot.    Expression2 ::= "not" Expression;
 

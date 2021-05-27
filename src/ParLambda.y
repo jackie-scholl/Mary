@@ -27,15 +27,16 @@ import LexLambda
 %token
   '(' { PT _ (TS _ 1) }
   ')' { PT _ (TS _ 2) }
-  '.' { PT _ (TS _ 3) }
-  'and' { PT _ (TS _ 4) }
-  'false' { PT _ (TS _ 5) }
-  'if' { PT _ (TS _ 6) }
-  'let' { PT _ (TS _ 7) }
-  'not' { PT _ (TS _ 8) }
-  'or' { PT _ (TS _ 9) }
-  'true' { PT _ (TS _ 10) }
-  '~' { PT _ (TS _ 11) }
+  '+' { PT _ (TS _ 3) }
+  '.' { PT _ (TS _ 4) }
+  'and' { PT _ (TS _ 5) }
+  'false' { PT _ (TS _ 6) }
+  'if' { PT _ (TS _ 7) }
+  'let' { PT _ (TS _ 8) }
+  'not' { PT _ (TS _ 9) }
+  'or' { PT _ (TS _ 10) }
+  'true' { PT _ (TS _ 11) }
+  '~' { PT _ (TS _ 12) }
   L_Ident  { PT _ (TV $$) }
   L_integ  { PT _ (TI $$) }
 
@@ -52,6 +53,7 @@ Expression1 : '~' Ident '.' Expression { AbsLambda.ELambda $2 $4 }
             | 'if' Expression Expression Expression { AbsLambda.EIf $2 $3 $4 }
             | 'and' Expression Expression { AbsLambda.EAnd $2 $3 }
             | 'or' Expression Expression { AbsLambda.EOr $2 $3 }
+            | '+' Expression Expression { AbsLambda.EPlus $2 $3 }
             | Expression2 { $1 }
 
 Expression2 :: { AbsLambda.Expression }
