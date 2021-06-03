@@ -59,7 +59,7 @@ writeCode code = result
 	where
 		mainInstructions = helper 0 code
 		allInstructions = ["addi sp, sp, -48"] ++ mainInstructions
-				++ ["la a0, msg", "ld a1, 0(sp)", "jal ra, printf", "li a0, 0", "jal exit"]
+				++ ["la a0, msg", "ld a1, 0(sp)", "call printf", "li a0, 0", "jal exit"]
 		header = ".section .text\n.globl main\nmain:\n"
 		footer = ".section .rodata\nmsg:\n\t\t.string \"Result: %d\\n\"\n "
 
@@ -85,6 +85,22 @@ writeCode code = result
  		 				"ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)",
  		 				"ADD t3, t4, t5",
  		 				"sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"]
+
+		outputLambda :: Integer -> Ident -> Body -> [String]
+		
+-- a function is a piece of code that's called with `call`, and has `a0 available to it`
+-- it should not access higher stack elements
+-- it should save ra for higher use
+-- it might be on the heap? at least in some cases
+-- (let const (lambda (y) (lambda (x) y)))
+
+ 		outputCall :: Integer -> [String]
+ 		outputCall stackPointer = [
+ 			"ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)", -- pointer to function
+ 			"ld a0, " ++ (show (stackPointer - 8))  ++ "(sp)", -- argument
+ 			"call t4", -- this is the function's identifier
+ 			"sd a0, " ++ (show (stackPointer - 16)) ++ "(sp)"	
+ 		]
 
 
 --resolve :: Expression -> Reader StackPointer Code
