@@ -1,64 +1,32 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 module RiscV where
+
 
 import AbsLambda
 import ParLambda
 
+import Debug.Trace (traceShowId)
+import qualified Data.Maybe as Maybe
 import qualified Data.Map.Strict as Map
-import Control.Monad.Reader
+import qualified Control.Monad.State as State
 
 data Identifier = Identifier String
+data CodeState = CodeState { variableMap :: VariableMap }
+type VariableMap = Map.Map Ident Int
 type Scope = Map.Map Identifier DData
 data DData = DBool Bool | DInt Integer | DFunction Ident Expression Scope | DError
-
-{-
-simpleNot :: DData -> DData
-simpleNot (DBool b) = DBool $ not b
-simpleNot _ = DError
-
-booleanOp :: (Bool -> Bool -> Bool) -> DData -> DData -> DData
-booleanOp op (DBool a) (DBool b) = DBool $ a `op` b
-booleanOp _ _ _ = DError 
-
-ifThenElse :: DData -> DData -> DData -> DData
-ifThenElse (DBool True)  thenClause _ = thenClause
-ifThenElse (DBool False) _ elseClause = elseClause
-ifThenElse _ _ _ = DError
-
-resolveCall :: DData -> DData -> DData
-resolveCall (DFunction argName functionBody scope) argument = runReader (resolve functionBody) (insert argName argument scope)
-resolveCall _ _ = DError
--}
-
 
 
 type StackPointer = Integer
 type Code = [Instruction]
-data Instruction = Constant Integer | Plus
+data Instruction = Constant Integer | Plus | VariableReference Int | LetClause Int | CloseScope deriving Show
 
-{-
-outputConstant :: Integer -> State StackPointer Code
-outputConstant :: 
-outputConstant value = do
-		sp <- ask
-		let newSp = sp + 8
-		let result = helper sp
-		local newSp result
-	where
-		helper :: Integer -> Code
-		helper sp = [load, store sp]
-
-		load = Instruction $ "li t3, " ++ (show value)
-		store sp = Instruction $ "sd t3, " ++ (show sp) ++ "(sp)" 
-
-outputPlus :: Expression -> Expression -> Reader StackPointer Code
-outputPlus = undefined
--}
-
-writeCode :: Code -> String
-writeCode code = result
+writeCode :: Int -> Code -> String
+writeCode variableCount code = result
 	where
 		mainInstructions = helper 0 code
-		allInstructions = ["addi sp, sp, -48"] ++ mainInstructions
+		allInstructions = ["addi sp, sp, -48"] ++ initialScope ++ mainInstructions
 				++ ["la a0, msg", "ld a1, 0(sp)", "call printf", "li a0, 0", "jal exit"]
 		header = ".section .text\n.globl main\nmain:\n"
 		footer = ".section .rodata\nmsg:\n\t\t.string \"Result: %d\\n\"\n "
@@ -72,6 +40,12 @@ writeCode code = result
 		helper _ [] = []
 		helper stackPointer ((Constant value) : rest) = (outputConstant stackPointer value) ++ helper (stackPointer + 8) rest
 		helper stackPointer (Plus : rest) 			  = (outputPlus     stackPointer)       ++ helper (stackPointer - 8) rest
+		helper stackPointer ((LetClause variableIndex) : rest) =
+			outputNewScope ++ (outputLet stackPointer variableIndex) ++ helper (stackPointer - 8) rest
+		helper stackPointer (CloseScope : rest) = closeScope ++ helper stackPointer rest
+		helper stackPointer (x : rest) = error $ "unrecognized instruction: " ++ (show x)
+		--helper stackPointer (VariableReference variableNumber : rest) =
+		--	(outputVariableReference stackPointer) ++ helper (stackPointer + 8) rest
 
 		outputConstant :: Integer -> Integer -> [String]
  		outputConstant stackPointer value = [load, store]
@@ -81,12 +55,58 @@ writeCode code = result
 
  		outputPlus :: Integer -> [String]
  		outputPlus stackPointer = [
- 		 				"ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)",
- 		 				"ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)",
- 		 				"ADD t3, t4, t5",
- 		 				"sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"]
+				"ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)",
+				"ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)",
+				"ADD t3, t4, t5",
+				"sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"
+ 		 	]
 
-		outputLambda :: Integer -> Ident -> Body -> [String]
+		initialScope :: [String]
+		initialScope = [
+				"li a0, " ++ (show (8*(variableCount + 2))), 
+				"call malloc", -- make space for new scope, assume it works
+				"sd a0, -8(sp)" -- store new scope pointer
+			]
+
+		outputNewScope :: [String]
+		outputNewScope = [
+				"ld t4, -8(sp)", -- we'll always keep the most current scope here
+				"li a0, " ++ (show (8*(variableCount + 2))), 
+				"call malloc", -- make space for new scope, assume it works
+				"mv t5, a0", -- I'd rather work with the new scope in t5 
+				"ld t6, 0(t4)",
+				"sd t5, -8(sp)", -- store new scope pointer
+				"sd t6, 0(t5)", -- store ref to old scope at top of new scope
+				"li a0, " ++ (show variableCount), -- our counter, down to 0-
+				"loop6:",
+				"addi t5, t5, 8", -- start by incrementing pointers to old and new scopes
+				"addi t4, t4, 8",
+				"ld t6, 0(t4)", -- load from old scope into temporary
+				"sd t6, 0(t5)", -- store into new scope from temporary
+				"addi a0, a0, -1", -- decrement loop counter
+				"bgez a0, loop6" -- jump to top of loop if counter is greater than or equal to zero-}				
+			]
+
+		outputLet :: Integer -> Int -> [String]
+		outputLet stackPointer variableIndex = [
+				"ld t4, " ++ (show (stackPointer - 8)) ++ "(sp)",
+				--"li t5, " ++ (show $ traceShowId variableIndex),
+				--"addi t5, t5, 1", -- first word of scope is ref to prev scope
+				--"slli t5, t5, 3", -- each variable is 8 bytes, so shift left by 3
+				"ld t6, -8(sp)", -- this is the scope
+				--"add t6, t5, t6", -- we've done the offset into the scope, so now t6 holds the address where the var needs to go
+				"sd t4, 0(t6)" -- do the store!-}
+			]
+
+		closeScope :: [String]
+		closeScope = [
+				"ld t4, -8(sp)", -- current scope
+				"ld t5, 0(t4)", -- old scope
+				"sd t5, -8(sp)" -- do the store
+			]
+			
+
+		--outputLambda :: Integer -> Ident -> Body -> [String]
 		
 -- a function is a piece of code that's called with `call`, and has `a0 available to it`
 -- it should not access higher stack elements
@@ -99,12 +119,11 @@ writeCode code = result
  			"ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)", -- pointer to function
  			"ld a0, " ++ (show (stackPointer - 8))  ++ "(sp)", -- argument
  			"call t4", -- this is the function's identifier
- 			"sd a0, " ++ (show (stackPointer - 16)) ++ "(sp)"	
- 		]
+ 			"sd a0, " ++ (show (stackPointer - 16)) ++ "(sp)"]
 
 
 --resolve :: Expression -> Reader StackPointer Code
-resolve :: Expression -> Reader Scope Code
+resolve :: Expression -> State.State CodeState Code
 resolve s = case s of
 	ENum literal -> return [Constant literal]
 	ETrue -> return [Constant 1]
@@ -113,11 +132,33 @@ resolve s = case s of
 		result1 <- resolve expr1
 		result2 <- resolve expr2
 		return (result1 ++ result2 ++ [Plus])
+	EVar ident -> do
+		codeState <- State.get
+		let varMap = variableMap codeState
+		{-let (possibleNewIndex :: Int) = Map.size varMap
+		let (f :: Int -> Int -> Int) = \x -> \y -> y
+		let (updatedMap :: VariableMap) = Map.insertWith f ident possibleNewIndex varMap
+		State.put $ CodeState updatedMap-}
+		let realIndex = Maybe.fromMaybe (error "this variable hasn't been referenced before") $ Map.lookup ident varMap
+		return [VariableReference realIndex]
+	ELet ident value expr -> do
+		valueR <- resolve value
+		exprR  <- resolve expr
+		 
+		codeState <- State.get
+		let varMap = variableMap codeState
+		let (possibleNewIndex :: Int) = Map.size varMap
+		let (f :: Int -> Int -> Int) = \x -> \y -> y
+		let (updatedMap :: VariableMap) = Map.insertWith f ident possibleNewIndex varMap
+		State.put $ CodeState updatedMap
+		let realIndex = Maybe.fromJust $ Map.lookup ident updatedMap
+		
+		return $ valueR ++ [LetClause realIndex] ++ exprR ++ [CloseScope]
 	--(resolve expr1) ++ (resolve expr2) ++ [Plus]
 	otherwise -> error "whoops, idk how to handle anything else"
 
-resolve2 :: Expression -> Code
-resolve2 x = runReader (resolve x) Map.empty
+resolve2 :: Expression -> (Code, Int)
+resolve2 x =(\(a, b) -> (a, Map.size $ variableMap b)) $ State.runState (resolve x) (CodeState Map.empty)
 
 {-
 resolve :: Expression -> Reader Scope DData
@@ -161,13 +202,18 @@ parse :: String -> Either String Expression
 parse s = pExpression $ myLexer s
 
 compile :: String -> Either String String
-compile = fmap writeCode . fmap resolve2 . parse
+--compile = fmap (flip . uncurry writeCode) . fmap resolve2 . parse
+compile s = do
+	(parsed :: Expression) <- parse s
+	let (code, variableCount) = resolve2 parsed
+	let output = writeCode variableCount code
+	return output
 
 writeOrErr :: Either String String -> IO ()
 writeOrErr (Left s) = error s
 writeOrErr (Right s) = writeFile "output.s" s
 
-input = "true"
+input = "(let x 3 (let y 2 4))"
 
 doThing :: IO ()
 doThing = do
