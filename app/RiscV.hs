@@ -2,7 +2,6 @@
 
 module RiscV where
 
-
 import AbsLambda
 import ParLambda
 
@@ -27,7 +26,7 @@ writeCode variableCount code = result
 	where
 		mainInstructions = helper 0 code
 		allInstructions = ["addi sp, sp, -48"] ++ initialScope ++ mainInstructions
-				++ ["la a0, msg", "ld a1, 0(sp)", "call printf", "li a0, 0", "jal exit"]
+				++ ["la a0, msg", "ld a1, 0(sp)", "call printf", "li a0, 0", "jal exit"] ++ newScopeFunction
 		header = ".section .text\n.globl main\nmain:\n"
 		footer = ".section .rodata\nmsg:\n\t\t.string \"Result: %d\\n\"\n "
 
@@ -68,12 +67,21 @@ writeCode variableCount code = result
 				"sd a0, -8(sp)" -- store new scope pointer
 			]
 
+
 		outputNewScope :: [String]
 		outputNewScope = [
-				"ld t4, -8(sp)", -- we'll always keep the most current scope here
+				"jal newscope"
+			]
+
+		newScopeFunction :: [String]
+		newScopeFunction = [
+				"newscope:", -- label for the function
 				"li a0, " ++ (show (8*(variableCount + 2))), 
+				"mv s1, ra", -- store return address
 				"call malloc", -- make space for new scope, assume it works
+				"mv ra, s1", -- restore return address
 				"mv t5, a0", -- I'd rather work with the new scope in t5 
+				"ld t4, -8(sp)", -- we'll always keep the most current scope here
 				"ld t6, 0(t4)",
 				"sd t5, -8(sp)", -- store new scope pointer
 				"sd t6, 0(t5)", -- store ref to old scope at top of new scope
@@ -84,7 +92,8 @@ writeCode variableCount code = result
 				"ld t6, 0(t4)", -- load from old scope into temporary
 				"sd t6, 0(t5)", -- store into new scope from temporary
 				"addi a0, a0, -1", -- decrement loop counter
-				"bgez a0, loop6" -- jump to top of loop if counter is greater than or equal to zero-}				
+				"bgez a0, loop6", -- jump to top of loop if counter is greater than or equal to zero-}
+				"jr ra" -- return from function
 			]
 
 		outputLet :: Integer -> Int -> [String]
@@ -213,7 +222,9 @@ writeOrErr :: Either String String -> IO ()
 writeOrErr (Left s) = error s
 writeOrErr (Right s) = writeFile "output.s" s
 
+--input = "(let x 3 (let y 2 4))"
 input = "(let x 3 4)"
+
 
 doThing :: IO ()
 doThing = do
