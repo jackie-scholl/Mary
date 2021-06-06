@@ -90,11 +90,11 @@ writeCode variableCount code = result
 		outputLet :: Integer -> Int -> [String]
 		outputLet stackPointer variableIndex = [
 				"ld t4, " ++ (show (stackPointer - 8)) ++ "(sp)",
-				--"li t5, " ++ (show $ traceShowId variableIndex),
-				--"addi t5, t5, 1", -- first word of scope is ref to prev scope
-				--"slli t5, t5, 3", -- each variable is 8 bytes, so shift left by 3
+				"li t5, " ++ (show $ traceShowId variableIndex),
+				"addi t5, t5, 1", -- first word of scope is ref to prev scope
+				"slli t5, t5, 3", -- each variable is 8 bytes, so shift left by 3
 				"ld t6, -8(sp)", -- this is the scope
-				--"add t6, t5, t6", -- we've done the offset into the scope, so now t6 holds the address where the var needs to go
+				"add t6, t5, t6", -- we've done the offset into the scope, so now t6 holds the address where the var needs to go
 				"sd t4, 0(t6)" -- do the store!-}
 			]
 
@@ -213,7 +213,7 @@ writeOrErr :: Either String String -> IO ()
 writeOrErr (Left s) = error s
 writeOrErr (Right s) = writeFile "output.s" s
 
-input = "(let x 3 (let y 2 4))"
+input = "(let x 3 4)"
 
 doThing :: IO ()
 doThing = do
