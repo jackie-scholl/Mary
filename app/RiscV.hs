@@ -53,92 +53,83 @@ writeCode variableCount code = result
  				store = "sd t3, " ++ (show stackPointer) ++ "(sp)"
 
  		outputPlus :: Integer -> [String]
- 		outputPlus stackPointer = [
-				"ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)",
-				"ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)",
-				"ADD t3, t4, t5",
-				"sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"
+ 		outputPlus stackPointer =
+ 			[ "ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)"
+			, "ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)"
+			, "ADD t3, t4, t5"
+			, "sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"
 			]
 
 		outputVariableReference :: Integer -> Int -> [String]
 		outputVariableReference stackPointer variableIndex =
-				[ "ld t0, -8(sp)" -- current scope
-				, "li t1, " ++ (show variableIndex)
-				, "addi t1, t1, 1" -- first word of scope is ref to previous scope
-				, "slli t1, t1, 3" -- each variable is 8 bytes, so shift left by 3
-				, "add t0, t1, t0" -- offset into our scope
-				, "ld t2, 0(t0)" -- get the value
-				, "sd t2, " ++ (show stackPointer) ++ "(sp)"
-				]
+			[ "ld t0, -8(sp)" -- current scope
+			, "li t1, " ++ (show variableIndex)
+			, "addi t1, t1, 1" -- first word of scope is ref to previous scope
+			, "slli t1, t1, 3" -- each variable is 8 bytes, so shift left by 3
+			, "add t0, t1, t0" -- offset into our scope
+			, "ld t2, 0(t0)" -- get the value
+			, "sd t2, " ++ (show stackPointer) ++ "(sp)"
+			]
 
 
 		initialScope :: [String]
-		initialScope = [
-				"li a0, " ++ (show (8*(variableCount + 2))), 
-				"call malloc", -- make space for new scope, assume it works
-				"sd a0, -8(sp)" -- store new scope pointer
+		initialScope =
+			[ "li a0, " ++ (show (8*(variableCount + 2)))
+			, "call malloc" -- make space for new scope, assume it works
+			, "sd a0, -8(sp)" -- store new scope pointer
 			]
 
 		outputNewScope :: [String]
-		outputNewScope = [
-				"jal newscope"
-			]
+		outputNewScope =
+			[ "jal newscope" ]
 
 		newScopeFunction :: [String]
-		newScopeFunction = [
-				"newscope:", -- label for the function
-				"li a0, " ++ (show (8*(variableCount + 2))), 
-				"mv s1, ra", -- store return address
-				"call malloc", -- make space for new scope, assume it works
-				"mv ra, s1", -- restore return address
-				"mv t5, a0", -- I'd rather work with the new scope in t5 
-				"ld t4, -8(sp)", -- we'll always keep the most current scope here
-				"sd t5, -8(sp)", -- store new scope pointer
-				"sd t4, 0(t5)", -- store ref to old scope at top of new scope
-				"li a0, " ++ (show variableCount), -- our counter, down to 0-
-				"loop6:",
-				"addi t5, t5, 8", -- start by incrementing pointers to old and new scopes
-				"addi t4, t4, 8",
-				"ld t6, 0(t4)", -- load from old scope into temporary
-				"sd t6, 0(t5)", -- store into new scope from temporary
-				"addi a0, a0, -1", -- decrement loop counter
-				"bgez a0, loop6", -- jump to top of loop if counter is greater than or equal to zero-}
-				"jr ra" -- return from function
+		newScopeFunction =
+			[ "newscope:" -- label for the function
+			, "li a0, " ++ (show (8*(variableCount + 2))) 
+			, "mv s1, ra" -- store return address
+			, "call malloc" -- make space for new scope, assume it works
+			, "mv ra, s1" -- restore return address
+			, "mv t5, a0" -- I'd rather work with the new scope in t5 
+			, "ld t4, -8(sp)" -- we'll always keep the most current scope here
+			, "sd t5, -8(sp)" -- store new scope pointer
+			, "sd t4, 0(t5)" -- store ref to old scope at top of new scope
+			, "li a0, " ++ (show variableCount) -- our counter, down to 0-
+			, "loop6:"
+			, "addi t5, t5, 8" -- start by incrementing pointers to old and new scopes
+			, "addi t4, t4, 8"
+			, "ld t6, 0(t4)" -- load from old scope into temporary
+			, "sd t6, 0(t5)" -- store into new scope from temporary
+			, "addi a0, a0, -1" -- decrement loop counter
+			, "bgez a0, loop6" -- jump to top of loop if counter is greater than or equal to zero-}
+			, "jr ra" -- return from function
 			]
 
 		outputLet :: Integer -> Int -> [String]
-		outputLet stackPointer variableIndex = [
-				"ld t4, " ++ (show (stackPointer - 8)) ++ "(sp)",
-				"li t5, " ++ (show $ traceShowId variableIndex),
-				"addi t5, t5, 1", -- first word of scope is ref to prev scope
-				"slli t5, t5, 3", -- each variable is 8 bytes, so shift left by 3
-				"ld t6, -8(sp)", -- this is the scope
-				"add t6, t5, t6", -- we've done the offset into the scope, so now t6 holds the address where the var needs to go
-				"sd t4, 0(t6)" -- do the store!-}
+		outputLet stackPointer variableIndex =
+			["ld t4, " ++ (show (stackPointer - 8)) ++ "(sp)"
+			, "li t5, " ++ (show $ traceShowId variableIndex)
+			, "addi t5, t5, 1" -- first word of scope is ref to prev scope
+			, "slli t5, t5, 3" -- each variable is 8 bytes, so shift left by 3
+			, "ld t6, -8(sp)" -- this is the scope
+			, "add t6, t5, t6" -- we've done the offset into the scope, so now t6 holds the address where the var needs to go
+			, "sd t4, 0(t6)" -- do the store!-}
 			]
 
 		closeScope :: [String]
-		closeScope = [
-				"ld t4, -8(sp)", -- current scope
-				"ld t5, 0(t4)", -- old scope
-				"sd t5, -8(sp)" -- do the store
+		closeScope =
+			[ "ld t4, -8(sp)" -- current scope
+			, "ld t5, 0(t4)" -- old scope
+			, "sd t5, -8(sp)" -- do the store
 			]
-			
-
-		--outputLambda :: Integer -> Ident -> Body -> [String]
-		
--- a function is a piece of code that's called with `call`, and has `a0 available to it`
--- it should not access higher stack elements
--- it should save ra for higher use
--- it might be on the heap? at least in some cases
--- (let const (lambda (y) (lambda (x) y)))
 
  		outputCall :: Integer -> [String]
- 		outputCall stackPointer = [
- 			"ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)", -- pointer to function
- 			"ld a0, " ++ (show (stackPointer - 8))  ++ "(sp)", -- argument
- 			"call t4", -- this is the function's identifier
- 			"sd a0, " ++ (show (stackPointer - 16)) ++ "(sp)"]
+ 		outputCall stackPointer =
+ 			[ "ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)" -- pointer to function
+ 			, "ld a0, " ++ (show (stackPointer - 8))  ++ "(sp)" -- argument
+ 			, "call t4" -- this is the function's identifier
+ 			, "sd a0, " ++ (show (stackPointer - 16)) ++ "(sp)"
+ 			]
 
 
 --resolve :: Expression -> Reader StackPointer Code
