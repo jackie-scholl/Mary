@@ -37,12 +37,12 @@ writeCode variableCount code = result
 	
 		helper :: Integer -> Code -> [String]
 		helper _ [] = []
-		helper stackPointer ((Constant value) : rest) = (outputConstant stackPointer value) ++ helper (stackPointer + 8) rest
+		helper stackPointer (Constant value : rest) = (outputConstant stackPointer value) ++ helper (stackPointer + 8) rest
 		helper stackPointer (Plus : rest) 			  = (outputPlus     stackPointer)       ++ helper (stackPointer - 8) rest
-		helper stackPointer ((LetClause variableIndex) : rest) =
+		helper stackPointer (LetClause variableIndex : rest) =
 			outputNewScope ++ (outputLet stackPointer variableIndex) ++ helper (stackPointer - 8) rest
 		helper stackPointer (CloseScope : rest) = closeScope ++ helper stackPointer rest
-		helper stackPointer ((VariableReference variableIndex) : rest) =
+		helper stackPointer (VariableReference variableIndex : rest) =
 			(outputVariableReference stackPointer variableIndex) ++ helper (stackPointer + 8) rest
 		helper stackPointer (x : rest) = error $ "unrecognized instruction: " ++ (show x)
 
