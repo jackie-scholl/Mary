@@ -37,31 +37,31 @@ writeCode variableCount code = result
 	
 		helper :: Integer -> Code -> [String]
 		helper _ [] = []
-		helper stackPointer (Constant value : rest) = (outputConstant stackPointer value) ++ helper (stackPointer + 8) rest
-		helper stackPointer (Plus : rest) 			  = (outputPlus     stackPointer)       ++ helper (stackPointer - 8) rest
+		helper stackPointer (Constant value : rest) = (constant stackPointer value) ++ helper (stackPointer + 8) rest
+		helper stackPointer (Plus : rest) 			= (plus     stackPointer)       ++ helper (stackPointer - 8) rest
 		helper stackPointer (LetClause variableIndex : rest) =
-			outputNewScope ++ (outputLet stackPointer variableIndex) ++ helper (stackPointer - 8) rest
+			newScope ++ (letClause stackPointer variableIndex) ++ helper (stackPointer - 8) rest
 		helper stackPointer (CloseScope : rest) = closeScope ++ helper stackPointer rest
 		helper stackPointer (VariableReference variableIndex : rest) =
-			(outputVariableReference stackPointer variableIndex) ++ helper (stackPointer + 8) rest
+			(variableReference stackPointer variableIndex) ++ helper (stackPointer + 8) rest
 		helper stackPointer (x : rest) = error $ "unrecognized instruction: " ++ (show x)
 
-		outputConstant :: Integer -> Integer -> [String]
- 		outputConstant stackPointer value = [load, store]
+		constant :: Integer -> Integer -> [String]
+ 		constant stackPointer value = [load, store]
  			where
  				load = "li t3, " ++ (show value)
  				store = "sd t3, " ++ (show stackPointer) ++ "(sp)"
 
- 		outputPlus :: Integer -> [String]
- 		outputPlus stackPointer =
+ 		plus :: Integer -> [String]
+ 		plus stackPointer =
  			[ "ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)"
 			, "ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)"
 			, "ADD t3, t4, t5"
 			, "sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"
 			]
 
-		outputVariableReference :: Integer -> Int -> [String]
-		outputVariableReference stackPointer variableIndex =
+		variableReference :: Integer -> Int -> [String]
+		variableReference stackPointer variableIndex =
 			[ "ld t0, -8(sp)" -- current scope
 			, "li t1, " ++ (show variableIndex)
 			, "addi t1, t1, 1" -- first word of scope is ref to previous scope
@@ -79,8 +79,8 @@ writeCode variableCount code = result
 			, "sd a0, -8(sp)" -- store new scope pointer
 			]
 
-		outputNewScope :: [String]
-		outputNewScope =
+		newScope :: [String]
+		newScope =
 			[ "jal newscope" ]
 
 		newScopeFunction :: [String]
@@ -105,10 +105,10 @@ writeCode variableCount code = result
 			, "jr ra" -- return from function
 			]
 
-		outputLet :: Integer -> Int -> [String]
-		outputLet stackPointer variableIndex =
+		letClause :: Integer -> Int -> [String]
+		letClause stackPointer variableIndex =
 			["ld t4, " ++ (show (stackPointer - 8)) ++ "(sp)"
-			, "li t5, " ++ (show $ traceShowId variableIndex)
+			, "li t5, " ++ (show variableIndex)
 			, "addi t5, t5, 1" -- first word of scope is ref to prev scope
 			, "slli t5, t5, 3" -- each variable is 8 bytes, so shift left by 3
 			, "ld t6, -8(sp)" -- this is the scope
@@ -123,8 +123,8 @@ writeCode variableCount code = result
 			, "sd t5, -8(sp)" -- do the store
 			]
 
- 		outputCall :: Integer -> [String]
- 		outputCall stackPointer =
+ 		call :: Integer -> [String]
+ 		call stackPointer =
  			[ "ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)" -- pointer to function
  			, "ld a0, " ++ (show (stackPointer - 8))  ++ "(sp)" -- argument
  			, "call t4" -- this is the function's identifier
@@ -178,7 +178,7 @@ writeOrErr :: Either String String -> IO ()
 writeOrErr (Left s) = error s
 writeOrErr (Right s) = writeFile "output.s" s
 
-input = "(let x 3 (let y 2 4))"
+input = "(let x 3 (let y 6 y))"
 --input = "(let x 3 4)"
 
 

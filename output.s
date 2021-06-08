@@ -15,7 +15,7 @@ main:
 		ld t6, -8(sp)
 		add t6, t5, t6
 		sd t4, 0(t6)
-		li t3, 2
+		li t3, 6
 		sd t3, 0(sp)
 		jal newscope
 		ld t4, 0(sp)
@@ -25,8 +25,13 @@ main:
 		ld t6, -8(sp)
 		add t6, t5, t6
 		sd t4, 0(t6)
-		li t3, 4
-		sd t3, 0(sp)
+		ld t0, -8(sp)
+		li t1, 1
+		addi t1, t1, 1
+		slli t1, t1, 3
+		add t0, t1, t0
+		ld t2, 0(t0)
+		sd t2, 0(sp)
 		ld t4, -8(sp)
 		ld t5, 0(t4)
 		sd t5, -8(sp)
