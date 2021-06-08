@@ -9,7 +9,7 @@ main:
 		sd t3, 0(sp)
 		jal newscope
 		ld t4, 0(sp)
-		li t5, 1
+		li t5, 0
 		addi t5, t5, 1
 		slli t5, t5, 3
 		ld t6, -8(sp)
@@ -19,7 +19,7 @@ main:
 		sd t3, 0(sp)
 		jal newscope
 		ld t4, 0(sp)
-		li t5, 0
+		li t5, 1
 		addi t5, t5, 1
 		slli t5, t5, 3
 		ld t6, -8(sp)

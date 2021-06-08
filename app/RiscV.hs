@@ -42,9 +42,9 @@ writeCode variableCount code = result
 		helper stackPointer ((LetClause variableIndex) : rest) =
 			outputNewScope ++ (outputLet stackPointer variableIndex) ++ helper (stackPointer - 8) rest
 		helper stackPointer (CloseScope : rest) = closeScope ++ helper stackPointer rest
+		helper stackPointer ((VariableReference variableIndex) : rest) =
+			(outputVariableReference stackPointer variableIndex) ++ helper (stackPointer + 8) rest
 		helper stackPointer (x : rest) = error $ "unrecognized instruction: " ++ (show x)
-		--helper stackPointer (VariableReference variableNumber : rest) =
-		--	(outputVariableReference stackPointer) ++ helper (stackPointer + 8) rest
 
 		outputConstant :: Integer -> Integer -> [String]
  		outputConstant stackPointer value = [load, store]
@@ -58,7 +58,19 @@ writeCode variableCount code = result
 				"ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)",
 				"ADD t3, t4, t5",
 				"sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"
- 		 	]
+			]
+
+		outputVariableReference :: Integer -> Int -> [String]
+		outputVariableReference stackPointer variableIndex =
+				[ "ld t0, -8(sp)" -- current scope
+				, "li t1, " ++ (show variableIndex)
+				, "addi t1, t1, 1" -- first word of scope is ref to previous scope
+				, "slli t1, t1, 3" -- each variable is 8 bytes, so shift left by 3
+				, "add t0, t1, t0" -- offset into our scope
+				, "ld t2, 0(t0)" -- get the value
+				, "sd t2, " ++ (show stackPointer) ++ "(sp)"
+				]
+
 
 		initialScope :: [String]
 		initialScope = [
@@ -66,7 +78,6 @@ writeCode variableCount code = result
 				"call malloc", -- make space for new scope, assume it works
 				"sd a0, -8(sp)" -- store new scope pointer
 			]
-
 
 		outputNewScope :: [String]
 		outputNewScope = [
@@ -147,12 +158,12 @@ resolve s = case s of
 		let (f :: Int -> Int -> Int) = \x -> \y -> y
 		let (updatedMap :: VariableMap) = Map.insertWith f ident possibleNewIndex varMap
 		State.put $ CodeState updatedMap-}
-		let realIndex = Maybe.fromMaybe (error "this variable hasn't been referenced before") $ Map.lookup ident varMap
+		let possibleError = "this variable hasn't been referenced before: (" ++ (show ident) ++ ") varmap: " ++ (show varMap) 
+		let realIndex = Maybe.fromMaybe (error possibleError) $ Map.lookup ident varMap
 		return [VariableReference realIndex]
 	ELet ident value expr -> do
 		valueR <- resolve value
-		exprR  <- resolve expr
-		 
+
 		codeState <- State.get
 		let varMap = variableMap codeState
 		let (possibleNewIndex :: Int) = Map.size varMap
@@ -160,7 +171,8 @@ resolve s = case s of
 		let (updatedMap :: VariableMap) = Map.insertWith f ident possibleNewIndex varMap
 		State.put $ CodeState updatedMap
 		let realIndex = Maybe.fromJust $ Map.lookup ident updatedMap
-		
+
+		exprR  <- resolve expr
 		return $ valueR ++ [LetClause realIndex] ++ exprR ++ [CloseScope]
 	--(resolve expr1) ++ (resolve expr2) ++ [Plus]
 	otherwise -> error "whoops, idk how to handle anything else"
