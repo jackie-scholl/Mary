@@ -82,9 +82,8 @@ writeCode variableCount code = result
 				"mv ra, s1", -- restore return address
 				"mv t5, a0", -- I'd rather work with the new scope in t5 
 				"ld t4, -8(sp)", -- we'll always keep the most current scope here
-				"ld t6, 0(t4)",
 				"sd t5, -8(sp)", -- store new scope pointer
-				"sd t6, 0(t5)", -- store ref to old scope at top of new scope
+				"sd t4, 0(t5)", -- store ref to old scope at top of new scope
 				"li a0, " ++ (show variableCount), -- our counter, down to 0-
 				"loop6:",
 				"addi t5, t5, 8", -- start by incrementing pointers to old and new scopes
@@ -222,8 +221,8 @@ writeOrErr :: Either String String -> IO ()
 writeOrErr (Left s) = error s
 writeOrErr (Right s) = writeFile "output.s" s
 
---input = "(let x 3 (let y 2 4))"
-input = "(let x 3 4)"
+input = "(let x 3 (let y 2 4))"
+--input = "(let x 3 4)"
 
 
 doThing :: IO ()
