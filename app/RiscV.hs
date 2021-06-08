@@ -131,8 +131,6 @@ writeCode variableCount code = result
  			, "sd a0, " ++ (show (stackPointer - 16)) ++ "(sp)"
  			]
 
-
---resolve :: Expression -> Reader StackPointer Code
 resolve :: Expression -> State.State CodeState Code
 resolve s = case s of
 	ENum literal -> return [Constant literal]
@@ -145,10 +143,6 @@ resolve s = case s of
 	EVar ident -> do
 		codeState <- State.get
 		let varMap = variableMap codeState
-		{-let (possibleNewIndex :: Int) = Map.size varMap
-		let (f :: Int -> Int -> Int) = \x -> \y -> y
-		let (updatedMap :: VariableMap) = Map.insertWith f ident possibleNewIndex varMap
-		State.put $ CodeState updatedMap-}
 		let possibleError = "this variable hasn't been referenced before: (" ++ (show ident) ++ ") varmap: " ++ (show varMap) 
 		let realIndex = Maybe.fromMaybe (error possibleError) $ Map.lookup ident varMap
 		return [VariableReference realIndex]
@@ -165,55 +159,15 @@ resolve s = case s of
 
 		exprR  <- resolve expr
 		return $ valueR ++ [LetClause realIndex] ++ exprR ++ [CloseScope]
-	--(resolve expr1) ++ (resolve expr2) ++ [Plus]
 	otherwise -> error "whoops, idk how to handle anything else"
 
 resolve2 :: Expression -> (Code, Int)
 resolve2 x =(\(a, b) -> (a, Map.size $ variableMap b)) $ State.runState (resolve x) (CodeState Map.empty)
 
-{-
-resolve :: Expression -> Reader Scope DData
-resolve s = case s of
-    ETrue  -> return $ DBool True
-    EFalse -> return $ DBool False
-    ENum literal -> return $  DInt literal
-    EVar ident -> do
-        scope <- ask
-        return $ scope ! ident
-    ENot expr1 -> do
-        result1 <- resolve expr1
-        return $ simpleNot result1
-    EAnd expr1 expr2 -> do
-        result1 <- resolve expr1
-        result2 <- resolve expr2
-        return $ booleanOp (&&) result1 result2
-    EOr  expr1 expr2 -> do
-        result1 <- resolve expr1
-        result2 <- resolve expr2
-        return $ booleanOp (||) result1 result2
-    EIf  eCondition eThen eElse -> do
-        r1 <- resolve eCondition
-        r2 <- resolve eThen
-        r3 <- resolve eElse
-        return $ ifThenElse r1 r2 r3
-    ELet ident value expr -> do
-        val2 <- resolve value
-        let scope3 = insert ident val2
-        local scope3 (resolve expr)
-    ELambda ident body -> do
-        scope <- ask
-        return $ DFunction ident body scope
-    ECall function argument -> do
-        f' <- resolve function
-        a' <- resolve argument
-        return $ resolveCall f' a'
--}
-
 parse :: String -> Either String Expression
 parse s = pExpression $ myLexer s
 
 compile :: String -> Either String String
---compile = fmap (flip . uncurry writeCode) . fmap resolve2 . parse
 compile s = do
 	(parsed :: Expression) <- parse s
 	let (code, variableCount) = resolve2 parsed
@@ -230,9 +184,6 @@ input = "(let x 3 (let y 2 4))"
 
 doThing :: IO ()
 doThing = do
-    --s <- getLine
     let s = input
     let result = compile s
     writeOrErr result
-    --print $ fmap (\x -> runReader (resolve x) 0) $ pExpression $ myLexer s
-    --print $ fmap writeCode $ fmap resolve $ pExpression $ myLexer s
