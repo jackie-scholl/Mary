@@ -63,10 +63,6 @@ writeCode variableCount code = result
 		variableReference :: Integer -> Int -> [String]
 		variableReference stackPointer variableIndex =
 			[ "ld t0, -8(s0)" -- current scope
-			--, "li t1, " ++ (indexToOffset variableIndex)
-			--, "addi t1, t1, 1" -- first word of scope is ref to previous scope
-			--, "slli t1, t1, 3" -- each variable is 8 bytes, so shift left by 3
-			--, "add t0, t1, t0" -- offset into our scope
 			, "ld t2, " ++ (indexToOffset variableIndex) ++ "(t0)" -- get the value
 			, "sd t2, " ++ (show stackPointer) ++ "(s0)"
 			]
@@ -118,13 +114,8 @@ writeCode variableCount code = result
 		letClause :: Integer -> Int -> [String]
 		letClause stackPointer variableIndex =
 			["ld t1, " ++ (show (stackPointer - 8)) ++ "(s0)"
-			--, "li t5, " ++ (show variableIndex)
-			--, "addi t5, t5, 1" -- first word of scope is ref to prev scope
-			--, "slli t5, t5, 3" -- each variable is 8 bytes, so shift left by 3
 			, "ld t0, -8(s0)" -- this is the scope
-			--, "add t6, t5, t6" -- we've done the offset into the scope, so now t6 holds the address where the var needs to go
 			, "sd t1, " ++ (indexToOffset variableIndex) ++ "(t0)" -- do the store
-			--, "sd t4, 0(t6)" -- do the store!-}
 			]
 
 		closeScope :: [String]
@@ -191,7 +182,6 @@ writeOrErr (Left s) = error s
 writeOrErr (Right s) = writeFile "output.s" s
 
 input = "(let a 1 (let b 2 (let c 4 (let a 8 (+ b a)))))"
---input = "(let x 3 4)"
 
 
 doThing :: IO ()
