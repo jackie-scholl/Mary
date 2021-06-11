@@ -2,6 +2,8 @@
 
 module RiscV where
 
+import Interpreter (interpret)
+
 import AbsLambda
 import ParLambda
 
@@ -186,6 +188,7 @@ input = "(let a 1 (let b 2 (let c 4 (let a 8 (+ b a)))))"
 
 doThing :: IO ()
 doThing = do
-    let s = input
-    let result = compile s
-    writeOrErr result
+	let s = input
+	print $ interpret s
+	let result = compile s
+	writeOrErr result

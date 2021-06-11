@@ -17,6 +17,10 @@ booleanOp :: (Bool -> Bool -> Bool) -> DData -> DData -> DData
 booleanOp op (DBool a) (DBool b) = DBool $ a `op` b
 booleanOp _ _ _ = DError 
 
+plusOp :: DData -> DData -> DData
+plusOp (DInt a) (DInt b) = DInt $ a + b
+plusOp _ _ = DError
+
 ifThenElse :: DData -> DData -> DData -> DData
 ifThenElse (DBool True)  thenClause _ = thenClause
 ifThenElse (DBool False) _ elseClause = elseClause
@@ -31,6 +35,10 @@ resolve s = case s of
     ETrue  -> return $ DBool True
     EFalse -> return $ DBool False
     ENum literal -> return $  DInt literal
+    EPlus expr1 expr2 -> do
+		result1 <- resolve expr1
+		result2 <- resolve expr2
+		return $ plusOp result1 result2
     EVar ident -> do
         scope <- ask
         return $ scope ! ident
