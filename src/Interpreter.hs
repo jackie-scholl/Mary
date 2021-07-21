@@ -7,7 +7,15 @@ import Data.Map.Strict
 import Control.Monad.Reader
 
 type Scope = Map Ident DData
-data DData = DBool Bool | DInt Integer | DFunction Ident Expression Scope | DError deriving (Eq, Show)
+data DData = DBool Bool | DInt Integer | DFunction Ident Expression Scope | DError deriving (Eq)
+
+instance Show DData where
+	show (DBool True)  = "1"
+	show (DBool False) = "0"
+	show (DInt x) = show x
+	show (DFunction _ _ _) = "function"
+	
+	
 
 simpleNot :: DData -> DData
 simpleNot (DBool b) = DBool $ not b

@@ -22,3 +22,7 @@ cabal.project.local~
 .ghc.environment.*
 
 risc-v-fedora/*
+
+test_data/assembly/*
+test_data/assembly_out/*
+test_data/interpret_out/*

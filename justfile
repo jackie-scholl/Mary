@@ -1,3 +1,5 @@
+default: output
+
 build:
 	time ~/.cabal/bin/bnfc --haskell -o src Lambda.bnfc
 	rm src/TestLambda.hs
@@ -20,6 +22,16 @@ qemu:
 		-netdev user,id=usernet,hostfwd=tcp::10000-:22	
 
 output: build
-	time stack exec Mary-exe
-	time sshpass -p "fedora_rocks!" scp output.s scp://riscv@localhost:10000
-	time echo "gcc output.s && ./a.out" | sshpass -p "fedora_rocks!" ssh ssh://riscv@localhost:10000 "bash -s"
+	rm -f test_data/assembly/* test_data/assembly_out/* test_data/interpret_out/*
+	for testName in $(ls test_data/lambda_code); do echo $testName; stack exec Mary-exe $testName ; done
+	time sshpass -p "fedora_rocks!" scp -r test_data/assembly scp://riscv@localhost:10000
+	time sshpass -p "fedora_rocks!" scp test_data/script.sh scp://riscv@localhost:10000
+	time echo "./script.sh" | sshpass -p "fedora_rocks!" ssh ssh://riscv@localhost:10000 "bash -s"
+	time sshpass -p "fedora_rocks!" scp -r scp://riscv@localhost:10000/assembly_out test_data/
+	diff -s test_data/interpret_out/ test_data/assembly_out/
+
+
+
+	#time stack exec Mary-exe >assembly/builtin.s
+
+	#time echo "gcc assembly && ./a.out" | sshpass -p "fedora_rocks!" ssh ssh://riscv@localhost:10000 "bash -s"
