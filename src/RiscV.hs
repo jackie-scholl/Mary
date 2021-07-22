@@ -181,35 +181,18 @@ compile s = do
 	let output = writeCode variableCount code
 	return output
 
-writeOrErr :: Either String String -> IO ()
-writeOrErr (Left s) = error s
---writeOrErr (Right s) = writeFile "assembly/test1.s" s
-writeOrErr (Right s) = putStr s
-
-testInput = "(let a 1 (let b 2 (let c 4 (+ (let a 8 (+ b a)) a))))"
-
 fromRight :: Either a b -> b
 fromRight x = Maybe.fromJust $ Either.either (const Nothing) Just x
 
-{-inputString :: IO (String)
-inputString = do
-	return answer
-	where
-		test1 = undefined
--}
 doThing :: IO ()
 doThing = do
 	args <- getArgs
 	let testName = Maybe.fromJust $ Maybe.listToMaybe args
 	let inFileName = "test_data/lambda_code/" ++ testName
-	--let (fileContents :: Maybe (IO String)) = fmap readFile filename
-	--let (fileContents1 :: IO (Maybe String)) = sequenceA fileContents
 	inputString <- readFile inFileName
-	--let inputString = Maybe.fromJust fileContents2
 	let interpreted = show $ fromRight $ interpret inputString
 	let interpreted2 = "Result: " ++ interpreted ++ "\n"
 	writeFile ("test_data/interpret_out/" ++ testName ++ ".s.out") interpreted2
 	
-	let result = compile inputString
-	let result2 = fromRight result
-	writeFile ("test_data/assembly/" ++ testName ++ ".s") result2
+	let result = fromRight $ compile inputString
+	writeFile ("test_data/assembly/" ++ testName ++ ".s") result

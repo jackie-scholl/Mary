@@ -29,9 +29,3 @@ output: build
 	time echo "./script.sh" | sshpass -p "fedora_rocks!" ssh ssh://riscv@localhost:10000 "bash -s"
 	time sshpass -p "fedora_rocks!" scp -r scp://riscv@localhost:10000/assembly_out test_data/
 	diff -s test_data/interpret_out/ test_data/assembly_out/
-
-
-
-	#time stack exec Mary-exe >assembly/builtin.s
-
-	#time echo "gcc assembly && ./a.out" | sshpass -p "fedora_rocks!" ssh ssh://riscv@localhost:10000 "bash -s"
