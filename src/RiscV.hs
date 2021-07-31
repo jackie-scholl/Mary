@@ -30,7 +30,7 @@ writeCode variableCount code = result
 	where
 		mainInstructions = helper 0 code
 		allInstructions = initialScope ++ mainInstructions
-				++ ["la a0, msg", "ld a1, 0(s0)", "call printf", "li a0, 0", "jal exit"] ++ newScopeFunction
+				++ ["la a0, msg", "ld a1, 0(sp)", "call printf", "li a0, 0", "jal exit"] ++ newScopeFunction
 		header = ".section .text\n.globl main\nmain:\n"
 		footer = ".section .rodata\nmsg:\n\t\t.string \"Result: %d\\n\"\n "
 
@@ -54,21 +54,21 @@ writeCode variableCount code = result
  		constant stackPointer value = [load, store]
  			where
 				load = "li t3, " ++ (show value)
-				store = "sd t3, " ++ (show stackPointer) ++ "(s0)"
+				store = "sd t3, " ++ (show stackPointer) ++ "(sp)"
 
  		plus :: Integer -> [String]
  		plus stackPointer =
-			[ "ld t4, " ++ (show (stackPointer - 16)) ++ "(s0)"
-			, "ld t5, " ++ (show (stackPointer - 8))  ++ "(s0)"
+			[ "ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)"
+			, "ld t5, " ++ (show (stackPointer - 8))  ++ "(sp)"
 			, "ADD t3, t4, t5"
-			, "sd t3, " ++ (show (stackPointer - 16)) ++ "(s0)"
+			, "sd t3, " ++ (show (stackPointer - 16)) ++ "(sp)"
 			]
 
 		variableReference :: Integer -> Int -> [String]
 		variableReference stackPointer variableIndex =
-			[ "ld t0, -8(s0)" -- current scope
+			[ "ld t0, -8(sp)" -- current scope
 			, "ld t2, " ++ (indexToOffset variableIndex) ++ "(t0)" -- get the value
-			, "sd t2, " ++ (show stackPointer) ++ "(s0)"
+			, "sd t2, " ++ (show stackPointer) ++ "(sp)"
 			]
 
 		indexToOffset :: Int -> String
@@ -78,11 +78,11 @@ writeCode variableCount code = result
 		initialScope =
 			[ "li a0, " ++ (show $ 1024 * 1024) -- new frame pointer or whatever
 			, "call malloc"
-			, "mv s0, a0" -- new frame pointer
-			, "addi s0, s0, 8" -- for the scope pointer I guess?
+			, "mv sp, a0" -- new frame pointer
+			, "addi sp, sp, 8" -- for the scope pointer I guess?
 			, "li a0, " ++ (show (8*(variableCount + 2)))
 			, "call malloc" -- make s pace for new scope, assume it works
-			, "sd a0, -8(s0)" -- store new scope pointer
+			, "sd a0, -8(sp)" -- store new scope pointer
 			]
 
 		newScope :: [String]
@@ -100,8 +100,8 @@ writeCode variableCount code = result
 			, "mv ra, s1" -- restore return address
 			, "mv t1, a0" -- I'd rather work with the new scope in t1 
 
-			, "ld t0, -8(s0)" -- we'll always keep the most current scope here
-			, "sd t1, -8(s0)" -- store new scope pointer
+			, "ld t0, -8(sp)" -- we'll always keep the most current scope here
+			, "sd t1, -8(sp)" -- store new scope pointer
 			, "sd t0, 0(t1)" -- store ref to old scope at top of new scope
 			
 			, "li t3, " ++ (show variableCount) -- our counter, down to 0-
@@ -117,25 +117,25 @@ writeCode variableCount code = result
 
 		letClause :: Integer -> Int -> [String]
 		letClause stackPointer variableIndex =
-			["ld t1, " ++ (show (stackPointer - 8)) ++ "(s0)"
-			, "ld t0, -8(s0)" -- this is the scope
+			["ld t1, " ++ (show (stackPointer - 8)) ++ "(sp)"
+			, "ld t0, -8(sp)" -- this is the scope
 			, "sd t1, " ++ (indexToOffset variableIndex) ++ "(t0)" -- do the store
 			]
 
 		closeScope :: [String]
 		closeScope =
 			[ "nop"
-			, "ld t4, -8(s0)" -- current scope
+			, "ld t4, -8(sp)" -- current scope
 			, "ld t5, 0(t4)" -- old scope
-			, "sd t5, -8(s0)" -- do the store
+			, "sd t5, -8(sp)" -- do the store
 			]
 
 		call :: Integer -> [String]
 		call stackPointer =
-			[ "ld t4, " ++ (show (stackPointer - 16)) ++ "(s0)" -- pointer to function
-			, "ld a0, " ++ (show (stackPointer - 8))  ++ "(s0)" -- argument
+			[ "ld t4, " ++ (show (stackPointer - 16)) ++ "(sp)" -- pointer to function
+			, "ld a0, " ++ (show (stackPointer - 8))  ++ "(sp)" -- argument
 			, "call t4" -- this is the function's identifier
-			, "sd a0, " ++ (show (stackPointer - 16)) ++ "(s0)"
+			, "sd a0, " ++ (show (stackPointer - 16)) ++ "(sp)"
  			]
 
 resolve :: Expression -> State.State CodeState Code
