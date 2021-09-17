@@ -30,7 +30,7 @@ writeCode variableCount code = result
 	where
 		mainInstructions = helper 0 code
 		allInstructions = initialScope ++ mainInstructions
-				++ ["la a0, msg", "ld a1, 0(sp)", "call printf", "li a0, 0", "jal exit"] ++ newScopeFunction
+				++ ["la a0, msg", "ld a1, 0(sp)", "call printf", "li a0, 0", "jal exit"]
 		header = ".section .text\n.globl main\nmain:\n"
 		footer = ".section .rodata\nmsg:\n\t\t.string \"Result: %d\\n\"\n "
 
@@ -87,16 +87,13 @@ writeCode variableCount code = result
 
 		newScope :: [String]
 		newScope =
-			[ "jal newscope" ]
-
-		newScopeFunction :: [String]
-		newScopeFunction =
-			[ "newscope:" -- label for the function
-
+			[ "nop"
 			--malloc section			
 			, "li a0, " ++ (show (8*(variableCount + 2))) -- number of bytes we want
 			, "mv s1, ra" -- store return address
+			, "addi sp, sp, -8"
 			, "call malloc" -- make s pace for new scope, assume it works
+			, "addi sp, sp, 8"
 			, "mv ra, s1" -- restore return address
 			, "mv t1, a0" -- I'd rather work with the new scope in t1 
 
@@ -105,14 +102,13 @@ writeCode variableCount code = result
 			, "sd t0, 0(t1)" -- store ref to old scope at top of new scope
 			
 			, "li t3, " ++ (show variableCount) -- our counter, down to 0-
-			, "loop6:"
+			, "0:" -- start of loop
 			, "addi t0, t0, 8" -- start by incrementing pointers to old and new scopes
 			, "addi t1, t1, 8"
 			, "ld t4, 0(t0)" -- load from old scope into temporary
 			, "sd t4, 0(t1)" -- store into new scope from temporary
 			, "addi t3, t3, -1" -- decrement loop counter
-			, "bgez t3, loop6" -- jump to top of loop if counter is greater than or equal to zero-}
-			, "jr ra" -- return from function
+			, "bgez t3, 0b" -- jump to top of loop if counter is greater than or equal to zero
 			]
 
 		letClause :: Integer -> Int -> [String]
