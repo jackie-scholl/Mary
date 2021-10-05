@@ -89,7 +89,7 @@ writeCode variableCount code = result
 			, "li a0, " ++ (show (8*(variableCount + 2))) -- number of bytes we want
 			, "mv s1, ra" -- store return address
 			, "addi sp, sp, -8"
-			, "call malloc" -- make s pace for new scope, assume it works
+			, "call malloc" -- make space for new scope, assume it works
 			, "addi sp, sp, 8"
 			, "mv ra, s1" -- restore return address
 			, "mv t1, a0" -- I'd rather work with the new scope in t1 
