@@ -76,10 +76,7 @@ writeCode variableCount code = result
 
 		initialScope :: [String]
 		initialScope =
-			[ "li a0, " ++ (show $ 1024 * 1024) -- new frame pointer or whatever
-			, "call malloc"
-			, "mv sp, a0" -- new frame pointer
-			, "addi sp, sp, 8" -- for the scope pointer I guess?
+			[ "nop"
 			, "li a0, " ++ (show (8*(variableCount + 2)))
 			, "call malloc" -- make s pace for new scope, assume it works
 			, "sd a0, -8(sp)" -- store new scope pointer
